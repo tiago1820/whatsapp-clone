@@ -4,63 +4,69 @@ export class ChatController {
 
     createChat = async (req, res) => {
         let data = {};
-        let users = [];
         try {
             const user1 = await req.user.user;
-            const user2 = req.body;
-            if (!user2) {
-                return this.handleError(res, data, 400, "Falta el ID del usuario para crear el chat.");
-            }
-            const { dataValues: user2Exists } = await User.findByPk(user2.userId, {
-                attributes: { exclude: ["password", "createdAt", "updatedAt"] }
-            });
-            if (!user2Exists) {
-                return this.handleError(res, data, 404, "El usuario con el ID proporcionado no existe.");
-            }
+            const user2 = await this.getUserAndValidate(req.body.userId);
+            if (!user2) return res.status(400).json(
+                data.error = "Falta el ID del usuario para crear el chat o el usuario no existe.");
             const chat = await ChatUser.findOne({
                 attributes: ["chatId"],
-                where: {
-                    userId: [user1.id, user2Exists.id]
-                },
+                where: { userId: [user1.id, user2.id] },
                 group: ["chatId"],
                 having: conn.literal("count(*) = 2"),
                 raw: true
             });
-
-            if (!chat) {
-                const { dataValues: chat } = await Chat.create({
-                    chatName: "",
-                    isGroupChat: false,
-                    groupAdminId: null
-                });
-                await ChatUser.bulkCreate([
-                    { userId: user1.id, chatId: chat.id },
-                    { userId: user2Exists.id, chatId: chat.id }
-                ]);
-                users = await this.createUsersArray(user1, user2Exists);
-                data.chatId = chat.id;
-                data.users = users;
-                return res.status(200).json(data);
-            } else {
-                users = await this.createUsersArray(user1, user2Exists);
-                data.chatId = chat.chatId;
-                data.users = users;
+            if (chat) {
+                data = this.setDataProperties(
+                    chat.chatId,
+                    user2.userName,
+                    user2.profileImage,
+                    this.createUsersArray(user1, user2)
+                );
                 return res.status(200).json(data);
             }
-
+            const { dataValues: newChat } = await Chat.create({
+                chatName: "",
+                isGroupChat: false,
+                groupAdminId: null
+            });
+            await ChatUser.bulkCreate([
+                { userId: user1.id, chatId: newChat.id },
+                { userId: user2.id, chatId: newChat.id }
+            ]);
+            data = this.setDataProperties(
+                newChat.id,
+                user2.userName,
+                user2.profileImage,
+                this.createUsersArray(user1, user2)
+            );
+            return res.status(200).json(data);
         } catch (error) {
-            return this.handleError(res, data, 500, "Internal Server Error");
+            return res.status(500).json(data.error = "Internal Server Error");
         }
     }
 
-    createUsersArray = async (user1, user2) => {
+    setDataProperties = (chatId, chatName, profileImage, usersArray) => {
+        return {
+            chatId: chatId,
+            chatName: chatName,
+            profileImage: profileImage,
+            users: usersArray
+        };
+    };
+
+    getUserAndValidate = async (userId) => {
+        if (!userId) return null;
+        const user = await User.findByPk(userId, {
+            attributes: { exclude: ["password", "createdAt", "updatedAt"] },
+            raw: true
+        });
+        return user;
+    }
+
+    createUsersArray = (user1, user2) => {
         const { password, createdAt, updatedAt, ...cleanUser1 } = user1;
         const users = [cleanUser1, user2];
         return users;
     };
-
-    handleError = (res, data, statusCode, message) => {
-        data.error = message;
-        return res.status(statusCode).json(data);
-    }
 }
