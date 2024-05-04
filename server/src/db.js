@@ -8,6 +8,7 @@ import {
 } from "./constants/index.js";
 import UserModel from "./models/user.model.js";
 import ChatModel from "./models/chat.model.js";
+import ChatUserModel from "./models/chatUser.model.js";
 
 const sequelize = new Sequelize(
     `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`,
@@ -16,14 +17,13 @@ const sequelize = new Sequelize(
 
 UserModel(sequelize);
 ChatModel(sequelize);
+ChatUserModel(sequelize);
 
-const { User, Chat } = sequelize.models;
-
-User.belongsToMany(Chat, { through: "ChatUser" });
-Chat.belongsToMany(User, { through: "ChatUser" });
+const { User, Chat, ChatUser } = sequelize.models;
 
 export {
     User,
     Chat,
+    ChatUser,
     sequelize as conn
 };
