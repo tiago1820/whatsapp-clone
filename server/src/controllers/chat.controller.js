@@ -47,12 +47,7 @@ export class ChatController {
     }
 
     setDataProperties = (chatId, chatName, profileImage, usersArray) => {
-        return {
-            chatId: chatId,
-            chatName: chatName,
-            profileImage: profileImage,
-            users: usersArray
-        };
+        return { chatId, chatName, profileImage, users: usersArray };
     };
 
     getUserAndValidate = async (userId) => {
