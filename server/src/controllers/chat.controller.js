@@ -5,7 +5,7 @@ export class ChatController {
     createChat = async (req, res) => {
         let data = {};
         try {
-            const user1 = await req.user.user;
+            const user1 = this.cleanUser1(req.user.user);
             const user2 = await this.getUserAndValidate(req.body.userId);
             if (!user2) return res.status(400).json(
                 data.error = "Falta el ID del usuario para crear el chat o el usuario no existe.");
@@ -46,6 +46,46 @@ export class ChatController {
         }
     }
 
+    getAllChats = async (req, res) => {
+        let data = {};
+        try {
+            const user1 = this.cleanUser1(req.user.user);
+            const chats = await ChatUser.findAll({
+                attributes: ["chatId"],
+                where: { userId: user1.id }
+            });
+            const chatIds = chats.map(chat => chat.chatId);
+            let userIds = [];
+            for (const chatId of chatIds) {
+                const chatUsers = await ChatUser.findAll({
+                    attributes: ["userId"],
+                    where: { chatId: chatId },
+                    raw: true
+                });
+                userIds = chatUsers.map(chatUser => chatUser.userId);
+                userIds = userIds.filter(userId => userId !== user1.id);
+                const users = await this.fetchUsers(userIds);
+                data = { count: users.length, users }
+                return res.status(200).json(data);
+            }
+        } catch (error) {
+            return res.status(500).json(data["error"] = "Internal Server Error");
+        }
+    }
+
+    // Metodos Auxiliares
+    fetchUsers = async (userIds) => {
+        const users = await Promise.all(userIds.map(async userId => {
+            const user = await User.findOne({
+                attributes: ["id", "userName", "profileImage"],
+                where: { id: userId },
+                raw: true
+            });
+            return user;
+        }));
+        return users;
+    }
+
     setDataProperties = (chatId, chatName, profileImage, usersArray) => {
         return { chatId, chatName, profileImage, users: usersArray };
     };
@@ -60,8 +100,15 @@ export class ChatController {
     }
 
     createUsersArray = (user1, user2) => {
-        const { password, createdAt, updatedAt, ...cleanUser1 } = user1;
-        const users = [cleanUser1, user2];
+        const users = [user1, user2];
         return users;
     };
+
+    cleanUser1 = (user1) => {
+        const { password, createdAt, updatedAt, ...cleanedUser1 } = user1;
+        return cleanedUser1;
+    }
+
+
+
 }
