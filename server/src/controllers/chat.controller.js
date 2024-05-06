@@ -73,6 +73,41 @@ export class ChatController {
         }
     }
 
+    createGroup = async (req, res) => {
+        let data = {};
+        try {
+            let { users, chatName } = req.body;
+            const user1 = this.cleanUser1(req.user.user);
+            if (!users || !chatName) {
+                return res.status(400).json(data["error"] = "users y chatName son campos obligatorios");
+            }
+            users.push(user1.id);
+            if (users.length < 2) {
+                return res.status(400).json(
+                    data["error"] = "Se requieren como mínimo dos usuarios para crear un nuevo grupo.");
+            }
+            const { dataValues: groupChat } = await Chat.create({
+                chatName,
+                groupAdminId: user1.id,
+                isGroupChat: true,
+            });
+            const chatId = groupChat.id;
+            let userIds = users.map(userId => ({ userId, chatId }));
+            await ChatUser.bulkCreate(userIds);
+            userIds = userIds.map(obj => obj.userId)
+            users = await this.fetchUsers(userIds);
+            data = {
+                chatId,
+                chatName,
+                users
+            }
+            return res.status(200).json(data);
+        } catch (error) {
+            console.log("Ola", error);
+            return res.status(500).json(data["error"] = "Internal Server Error");
+        }
+    }
+
     // Metodos Auxiliares
     fetchUsers = async (userIds) => {
         const users = await Promise.all(userIds.map(async userId => {
