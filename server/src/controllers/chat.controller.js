@@ -103,6 +103,7 @@ export class ChatController {
             }
             return res.status(200).json(data);
         } catch (error) {
+            console.log("Tiago: ", error);
             return res.status(500).json(data["error"] = "Internal Server Error");
         }
     }
@@ -126,6 +127,10 @@ export class ChatController {
             return res.status(500).json(data["error"] = "Internal Server Error");
         }
     }
+
+    // addToGroup method
+
+    // removeFromGroup method
 
     // Metodos Auxiliares
     fetchUsers = async (userIds) => {
