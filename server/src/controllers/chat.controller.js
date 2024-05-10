@@ -103,10 +103,34 @@ export class ChatController {
             }
             return res.status(200).json(data);
         } catch (error) {
-            console.log("Ola", error);
+            console.log("Tiago: ", error);
             return res.status(500).json(data["error"] = "Internal Server Error");
         }
     }
+
+    renameGroup = async (req, res) => {
+        let data = {};
+        try {
+            const { chatId, chatName } = req.body;
+            const [updatedRowsCount, updatedChat] = await Chat.update(
+                { chatName: chatName },
+                { where: { id: chatId }, returning: true }
+            );
+            if (updatedRowsCount === 0) {
+                data["message"] = "Group not found.";
+                return res.status(404).json({});
+            }
+            data["message"] = "Group name updated successfully.";
+            data["updatedChat"] = updatedChat[0];
+            return res.status(200).json(data);
+        } catch (error) {
+            return res.status(500).json(data["error"] = "Internal Server Error");
+        }
+    }
+
+    // addToGroup method
+
+    // removeFromGroup method
 
     // Metodos Auxiliares
     fetchUsers = async (userIds) => {
