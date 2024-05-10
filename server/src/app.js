@@ -2,11 +2,11 @@ import express from "express";
 import morgan from "morgan";
 import { router } from "./routes/index.js";
 
-export const server = express();
+export const app = express();
 
 // Middlewares
-server.use(morgan("dev"));
-server.use((req, res, next) => {
+app.use(morgan("dev"));
+app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Credentials", "true");
     res.header(
@@ -20,6 +20,6 @@ server.use((req, res, next) => {
     next();
 });
 
-server.use(express.urlencoded({ extended: true }));
-server.use(express.json());
-server.use("/api", router);
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use("/api", router);
