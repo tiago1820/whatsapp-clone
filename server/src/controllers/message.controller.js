@@ -2,7 +2,6 @@ import { Message, MessageUser, User, ChatUser, Chat } from "../db.js";
 
 export class MessageController {
 
-    // funciona pera esta muy feo, pronto sera refactorado
     sendMessage = async (req, res) => {
         let data = {};
         try {
@@ -46,6 +45,23 @@ export class MessageController {
                 sender,
                 chat
             }
+            return res.status(201).json(data);
+        } catch (error) {
+            return res.status(500).json(data["error"] = "Internal Server Error");
+        }
+    }
+
+    allMessages = async (req, res) => {
+        let data = {};
+        try {
+            const { chatId } = req.body;
+            const messages = await Message.findAll({
+                where: {
+                    chatId: chatId
+                }
+            });
+            data.count = messages.length;
+            data.messages = messages;
             return res.status(201).json(data);
         } catch (error) {
             return res.status(500).json(data["error"] = "Internal Server Error");
