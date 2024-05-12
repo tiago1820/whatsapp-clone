@@ -62,12 +62,13 @@ export class ChatController {
                     where: { chatId: chatId },
                     raw: true
                 });
-                userIds = chatUsers.map(chatUser => chatUser.userId);
-                userIds = userIds.filter(userId => userId !== user1.id);
-                const users = await this.fetchUsers(userIds);
-                data = { count: users.length, users }
-                return res.status(200).json(data);
+                const usersInChat = chatUsers.map(chatUser => chatUser.userId);
+                userIds = [...userIds, ...usersInChat];
             }
+            userIds = userIds.filter(userId => userId !== user1.id);
+            const users = await this.fetchUsers(userIds);
+            data = { count: users.length, users };
+            return res.status(200).json(data);
         } catch (error) {
             return res.status(500).json(data["error"] = "Internal Server Error");
         }
